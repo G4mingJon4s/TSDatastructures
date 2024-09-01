@@ -1,0 +1,12 @@
+{
+	"name": "tsdatastructures",
+	"module": "index.ts",
+	"type": "module",
+	"author": "G4mingJon4s",
+	"devDependencies": {
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	}
+}
