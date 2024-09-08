@@ -1,23 +1,14 @@
-import type { Heap } from "./Heap";
-
-interface Opts<T> {
-	/** Should be true if a < b */
-	compare?: (a: T, b: T) => boolean;
-	/** Should be true if a === b */
-	equals?: (a: T, b: T) => boolean;
-}
+import type { Heap, Opts } from "./Heap";
 
 export class BinaryHeap<T> implements Heap<T> {
 	data: T[] = [];
 	positions: Map<T, number> = new Map();
 
 	compare: (a: T, b: T) => boolean;
-	equals: (a: T, b: T) => boolean;
 
 	constructor(opts?: Opts<T>) {
-		const { compare, equals } = opts ?? {};
+		const { compare } = opts ?? {};
 		this.compare = compare ? compare : (a, b) => a < b;
-		this.equals = equals ? equals : (a, b) => a === b;
 	}
 
 	extractMin() {

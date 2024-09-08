@@ -5,8 +5,9 @@ interface Entry<T> {
 }
 
 export class DoublyLinkedList<T> {
-	head: Entry<T> | null = null;
-	tail: Entry<T> | null = null;
+	protected head: Entry<T> | null = null;
+	protected tail: Entry<T> | null = null;
+	protected contents = 0;
 
 	addFront(value: T): void {
 		const entry = {
@@ -18,6 +19,7 @@ export class DoublyLinkedList<T> {
 		if (this.head) this.head.prev = entry;
 		this.head = entry;
 		if (this.tail === null) this.tail = this.head;
+		this.contents++;
 	}
 
 	addEnd(value: T): void {
@@ -30,9 +32,11 @@ export class DoublyLinkedList<T> {
 		if (this.tail) this.tail.next = entry;
 		this.tail = entry;
 		if (this.head === null) this.head = this.tail;
+		this.contents++;
 	}
 
 	insert(value: T, index: number): void {
+		this.contents++;
 		if (index === 0) return this.addFront(value);
 
 		let prev: Entry<T> | null = this.head;
@@ -51,7 +55,8 @@ export class DoublyLinkedList<T> {
 
 	append(other: DoublyLinkedList<T>): void {
 		// Check if something is stored first
-		if (other.head === null || other.tail === null) return;
+		if (other.head === null || other.tail === null || other.contents === 0) return;
+		this.contents += other.contents;
 
 		if (this.tail === null) {
 			this.head = other.head;
@@ -88,6 +93,8 @@ export class DoublyLinkedList<T> {
 			if (next !== null) next.prev = prev;
 		}
 
+		this.contents--;
+
 		return true;
 	}
 
@@ -97,30 +104,24 @@ export class DoublyLinkedList<T> {
 		return entry?.value === item;
 	}
 
-	get(index: number): T | null {
+	nth(index: number): T | null {
 		let entry = this.head;
 		for (let i = 0; i < index; i++) entry = entry?.next ?? null;
 		return entry?.value ?? null;
 	}
 
 	size(): number {
-		let current = this.head;
-		let size = 0;
-
-		while (current !== null) {
-			size++;
-			current = current.next;
-		}
-
-		return size;
+		return this.contents;
 	}
 
-	forEach(func: (value: T) => void): void {
+	forEach(func: (value: T, index: number) => void): void {
 		let current = this.head;
+		let i = 0;
 
 		while (current !== null) {
-			func(current.value);
+			func(current.value, i);
 			current = current.next;
+			i++;
 		}
 	}
 
@@ -139,15 +140,6 @@ export class DoublyLinkedList<T> {
 	}
 
 	[Symbol.iterator] = this.values;
-
-	toString(): string {
-		if (this.size() === 0) return "DLL (0)";
-		const values = [];
-		for (const ell of this) values.push(`[${ell}]`);
-		if (this.size() < 2) return `DLL (${this.size()}): ${values[0]}`;
-
-		return `DLL (${this.size()}):\n${values.map(v => "  " + v.replaceAll("\n", "\n  ")).join("\n")}`;
-	}
 
 	static from<T>(values: Iterable<T>, action?: (value: T) => void): DoublyLinkedList<T> {
 		const list = new DoublyLinkedList<T>();

@@ -1,11 +1,5 @@
 import { DoublyLinkedList } from "./DoublyLinkedList";
-import type { Heap } from "./Heap";
-
-interface Opts<T> {
-	/** Should be true if a < b */
-	compare: (a: T, b: T) => boolean;
-	key: (a: T) => string;
-}
+import type { Heap, Opts } from "./Heap";
 
 class Entry<T> {
 	value: T;
@@ -32,10 +26,6 @@ class Entry<T> {
 		child.parent = parent;
 		return parent;
 	}
-
-	toString(): string {
-		return `${this.value}: { ${this.children} }`;
-	}
 }
 
 export class FibonacciHeap<T> implements Heap<T> {
@@ -51,10 +41,12 @@ export class FibonacciHeap<T> implements Heap<T> {
 		if (opts?.key) this.key = opts.key;
 	}
 
+	// O(1)
 	getMin(): T | null {
 		return this.min?.value ?? null;	
 	}
 
+	// O(log2(n)) (amortized)
 	extractMin(): T | null {
 		if (this.min === null) return null;
 		const minValue = this.min.value;
@@ -68,30 +60,33 @@ export class FibonacciHeap<T> implements Heap<T> {
 		this.relations.delete(this.key(minValue));
 
 		// Clean up 1-degree children
-		const sizes: Map<number, Entry<T>> = new Map();
+		const sizes = new Array(
+			Math.ceil(1.45 * Math.log2(this.root.size() + 1)) + 1
+		).fill(undefined).map<Entry<T> | undefined>(() => undefined);
 		for (let entry of this.root) {
 			let d = entry.degree();
-			while (sizes.has(d)) {
+			while (sizes[d] !== undefined) {
 				// Merge together
-				const other = sizes.get(d)!;
+				const other = sizes[d]!;
 				entry = entry.merge(other, this.compare);
 
 				// Delete from current spot
-				sizes.delete(d);
+				sizes[d] = undefined;
 				d++;
 			}
 
-			sizes.set(d, entry);
+			sizes[d] = entry;
 		}
 
 		// Create new root
-		this.root = DoublyLinkedList.from(sizes.values(), entry => {
+		this.root = DoublyLinkedList.from(sizes.filter(a => a !== undefined).values(), entry => {
 			if (this.min === null || this.compare(entry.value, this.min.value)) this.min = entry;
 		});
 
 		return minValue;
 	}
 
+	// O(1)
 	insert(item: T): void {
 		const entry = new Entry(item);
 		this.root.addEnd(entry);
@@ -100,6 +95,7 @@ export class FibonacciHeap<T> implements Heap<T> {
 		if (this.compare(item, this.min.value)) this.min = entry;
 	}
 
+	// O(1)
 	decreaseKey(item: T, newValue: T): boolean {
 		// Find reference to entry
 		const entry = this.relations.get(this.key(item));
@@ -137,30 +133,4 @@ export class FibonacciHeap<T> implements Heap<T> {
 
 		entry.parent = null;
 	}
-}
-
-const data = [20, 15, 32, 9, 520, 123, 538, 283, 175, 40];
-
-const heap = new FibonacciHeap<number>();
-
-console.log("Inserting data...");
-for (const value of data) {
-	heap.insert(value);
-}
-
-console.log("Testing extract");
-heap.extractMin();
-
-console.log("Testing decrease");
-heap.decreaseKey(520, 519);
-heap.decreaseKey(20, 1);
-heap.insert(2);
-heap.decreaseKey(2, 0);
-heap.insert(100);
-
-console.log("Output:");
-while (heap.getMin() !== null) {
-	const value = heap.extractMin();
-	console.log(value);
-	await new Promise(res => setTimeout(res, 1000));
 }
